@@ -3,9 +3,11 @@ set -e
 
 echo "🚀 Starting Den Beyers..."
 
-# Note: Database migrations should be run manually or via CI/CD
-# Run: npx prisma migrate deploy
-# The app will start without automatic migrations
+# Sync database schema (creates tables if they don't exist)
+echo "📦 Syncing database schema..."
+./node_modules/.bin/prisma db push --skip-generate --accept-data-loss || echo "⚠️ Database sync skipped"
+
+echo "✅ Starting server..."
 
 # Execute the main command
 exec "$@"

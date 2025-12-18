@@ -10,12 +10,11 @@ WORKDIR /app
 # Install dependencies needed for native modules
 RUN apk add --no-cache openssl libc6-compat python3 make g++
 
-# Copy package files (not lock file - we need fresh resolution for Linux)
+# Copy package files
 COPY package.json ./
 COPY prisma ./prisma/
 
-# Use npm install (not ci) to get correct platform bindings
-# This resolves dependencies fresh for Linux Alpine
+# Use npm install to get correct platform bindings
 RUN npm install --legacy-peer-deps
 
 # Generate Prisma client
@@ -45,6 +44,8 @@ RUN adduser --system --uid 1001 nuxtjs
 # Copy built application
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./package.json
 
