@@ -1,6 +1,21 @@
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   
+  // Debug: log config (remove in production)
+  console.log('Keycloak config:', {
+    issuer: config.keycloakIssuer,
+    clientId: config.keycloakClientId,
+    redirectUrl: config.keycloakRedirectUrl,
+  })
+  
+  // Validate config
+  if (!config.keycloakIssuer) {
+    throw createError({
+      statusCode: 500,
+      message: 'NUXT_KEYCLOAK_ISSUER environment variable is not set',
+    })
+  }
+  
   // Generate a random state for CSRF protection
   const state = crypto.randomUUID()
   
@@ -22,4 +37,3 @@ export default defineEventHandler(async (event) => {
   
   return sendRedirect(event, authUrl.toString())
 })
-
