@@ -3,19 +3,20 @@
 # Multi-stage build for Nuxt 3 + Prisma
 # ============================================
 
-# Stage 1: Builder (do everything on Linux)
+# Stage 1: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install dependencies needed for native modules
 RUN apk add --no-cache openssl libc6-compat python3 make g++
 
-# Copy package files
-COPY package.json package-lock.json* ./
+# Copy package files (not lock file - we need fresh resolution for Linux)
+COPY package.json ./
 COPY prisma ./prisma/
 
-# Fresh install on Linux - this gets the correct native bindings
-RUN npm ci
+# Use npm install (not ci) to get correct platform bindings
+# This resolves dependencies fresh for Linux Alpine
+RUN npm install --legacy-peer-deps
 
 # Generate Prisma client
 RUN npx prisma generate
