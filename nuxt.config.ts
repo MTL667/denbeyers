@@ -8,22 +8,23 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxt/eslint'],
 
   runtimeConfig: {
-    // Server-only config
-    keycloakIssuer: process.env.KEYCLOAK_ISSUER || 'http://localhost:8080/realms/denbeyers',
-    keycloakClientId: process.env.KEYCLOAK_CLIENT_ID || 'denbeyers-app',
-    keycloakClientSecret: process.env.KEYCLOAK_CLIENT_SECRET || '',
-    keycloakRedirectUrl: process.env.KEYCLOAK_REDIRECT_URL || 'http://localhost:3000/auth/callback',
+    // Server-only config - use NUXT_ prefix for env vars at runtime
+    // NUXT_KEYCLOAK_ISSUER, NUXT_KEYCLOAK_CLIENT_ID, etc.
+    keycloakIssuer: '',
+    keycloakClientId: '',
+    keycloakClientSecret: '',
+    keycloakRedirectUrl: '',
 
-    s3Endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
-    s3Region: process.env.S3_REGION || 'us-east-1',
-    s3Bucket: process.env.S3_BUCKET || 'denbeyers',
-    s3AccessKey: process.env.S3_ACCESS_KEY || 'minioadmin',
-    s3SecretKey: process.env.S3_SECRET_KEY || 'minioadmin',
+    s3Endpoint: '',
+    s3Region: 'us-east-1',
+    s3Bucket: '',
+    s3AccessKey: '',
+    s3SecretKey: '',
 
-    databaseUrl: process.env.DATABASE_URL || 'postgresql://denbeyers:denbeyers@localhost:5432/denbeyers',
+    databaseUrl: '',
 
-    maxFileSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB || '200'),
-    maxStickyItems: parseInt(process.env.MAX_STICKY_ITEMS || '10'),
+    maxFileSizeMb: 200,
+    maxStickyItems: 10,
 
     // Public config
     public: {
@@ -54,4 +55,3 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 })
-
