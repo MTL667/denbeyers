@@ -17,9 +17,9 @@ export const useUpload = () => {
   const error = useState<string | null>('upload-error', () => null)
 
   const uploadMedia = async (
-    file: File,
+    file: File | null,
     options: {
-      message?: string
+      message: string
       displayName?: string
       consent: boolean
       isOwnerPost?: boolean
@@ -33,43 +33,49 @@ export const useUpload = () => {
 
       const isOwnerUpload = options.isOwnerPost
 
-      // Step 1: Get presigned URL
-      const presignEndpoint = isOwnerUpload ? '/api/owner/media/presign' : '/api/media/presign'
-      const presignData = await $fetch<PresignResponse>(presignEndpoint, {
-        method: 'POST',
-        body: {
-          filename: file.name,
-          contentType: file.type,
-          size: file.size,
-        },
-      })
+      let presignData: PresignResponse | null = null
 
-      progress.value = 10
+      // Step 1: Get presigned URL (only if file is provided)
+      if (file) {
+        const presignEndpoint = isOwnerUpload ? '/api/owner/media/presign' : '/api/media/presign'
+        presignData = await $fetch<PresignResponse>(presignEndpoint, {
+          method: 'POST',
+          body: {
+            filename: file.name,
+            contentType: file.type,
+            size: file.size,
+          },
+        })
 
-      // Step 2: Upload to S3
-      const uploadResponse = await fetch(presignData.uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      })
+        progress.value = 10
 
-      if (!uploadResponse.ok) {
-        throw new Error('Upload to S3 failed')
+        // Step 2: Upload to S3
+        const uploadResponse = await fetch(presignData.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        })
+
+        if (!uploadResponse.ok) {
+          throw new Error('Upload to S3 failed')
+        }
+
+        progress.value = 80
+      } else {
+        progress.value = 50
       }
-
-      progress.value = 80
 
       // Step 3: Create media record
       const createEndpoint = isOwnerUpload ? '/api/owner/media' : '/api/media'
       const result = await $fetch<UploadResult>(createEndpoint, {
         method: 'POST',
         body: {
-          s3Key: presignData.s3Key,
-          type: presignData.type,
-          mimeType: file.type,
-          sizeBytes: file.size,
+          s3Key: presignData?.s3Key,
+          type: presignData?.type,
+          mimeType: file?.type,
+          sizeBytes: file?.size,
           message: options.message,
           displayName: options.displayName,
           consent: options.consent,

@@ -4,11 +4,11 @@ import { prisma } from '~/server/utils/prisma'
 import { MediaType } from '@prisma/client'
 
 const createMediaSchema = z.object({
-  s3Key: z.string().min(1),
-  type: z.enum(['IMAGE', 'VIDEO']),
-  mimeType: z.string().min(1),
-  sizeBytes: z.number().int().positive(),
-  message: z.string().max(500).optional(),
+  s3Key: z.string().optional(), // Optional - can be message-only
+  type: z.enum(['IMAGE', 'VIDEO']).optional(),
+  mimeType: z.string().optional(),
+  sizeBytes: z.number().int().positive().optional(),
+  message: z.string().min(1, 'Boodschap is verplicht').max(500),
   displayName: z.string().max(100).optional(),
   consent: z.boolean(),
 })
@@ -37,8 +37,8 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  // Verify the s3Key belongs to this user
-  if (!s3Key.includes(user.id)) {
+  // If there's a file, verify the s3Key belongs to this user
+  if (s3Key && !s3Key.includes(user.id)) {
     throw createError({
       statusCode: 403,
       message: 'Invalid S3 key',
@@ -49,11 +49,11 @@ export default defineEventHandler(async (event) => {
   const mediaItem = await prisma.mediaItem.create({
     data: {
       userId: user.id,
-      type: type as MediaType,
-      s3Key,
-      mimeType,
-      sizeBytes,
-      message: message || null,
+      type: s3Key ? (type as MediaType) : MediaType.IMAGE, // Default to IMAGE for text-only
+      s3Key: s3Key || null,
+      mimeType: mimeType || null,
+      sizeBytes: sizeBytes || 0,
+      message: message,
       displayName: displayName || user.name || 'Anoniem',
       consent,
       approved: false, // Requires moderation

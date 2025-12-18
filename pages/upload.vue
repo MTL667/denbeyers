@@ -73,11 +73,15 @@ const removeFile = () => {
 
 const isVideo = computed(() => file.value?.type.startsWith('video/'))
 
+const canSubmit = computed(() => {
+  return message.value.trim().length > 0 && consent.value
+})
+
 const handleSubmit = async () => {
-  if (!file.value || !consent.value) return
+  if (!canSubmit.value) return
 
   const result = await uploadMedia(file.value, {
-    message: message.value || undefined,
+    message: message.value,
     displayName: displayName.value || undefined,
     consent: consent.value,
   })
@@ -116,7 +120,7 @@ onUnmounted(() => {
           Deel je bericht
         </h1>
         <p class="text-xl text-warmth-600">
-          Upload een foto of video met een lieve boodschap voor Nick 💛
+          Schrijf een lieve boodschap voor Nick, met eventueel een foto of video 💛
         </p>
       </div>
 
@@ -164,7 +168,7 @@ onUnmounted(() => {
         <!-- File Upload -->
         <div>
           <label class="block text-sm font-medium text-warmth-700 mb-2">
-            Foto of Video *
+            Foto of Video (optioneel)
           </label>
           
           <!-- Dropzone -->
@@ -228,12 +232,13 @@ onUnmounted(() => {
         <!-- Message -->
         <div>
           <label class="block text-sm font-medium text-warmth-700 mb-2">
-            Boodschap (optioneel)
+            Boodschap *
           </label>
           <textarea
             v-model="message"
             rows="4"
             maxlength="500"
+            required
             class="w-full px-4 py-3 rounded-xl border border-warmth-200 focus:border-warmth-500 focus:ring-2 focus:ring-warmth-200 outline-none transition-all resize-none"
             placeholder="Schrijf een lieve boodschap voor Nick..."
           />
@@ -290,7 +295,7 @@ onUnmounted(() => {
         <!-- Submit Button -->
         <button
           type="submit"
-          :disabled="!file || !consent || uploading"
+          :disabled="!canSubmit || uploading"
           class="w-full py-4 rounded-xl text-lg font-bold bg-warmth-gradient text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         >
           <span v-if="uploading">Bezig met uploaden...</span>
