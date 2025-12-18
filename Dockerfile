@@ -3,39 +3,31 @@
 # Multi-stage build for Nuxt 3 + Prisma
 # ============================================
 
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
-WORKDIR /app
-
-# Install dependencies needed for Prisma and native modules
-RUN apk add --no-cache openssl libc6-compat
-
-COPY package.json package-lock.json* ./
-COPY prisma ./prisma/
-
-# Install dependencies without running postinstall (cross-platform issue)
-RUN npm ci --ignore-scripts
-
-# Generate Prisma client for Linux
-RUN npx prisma generate
-
-# Stage 2: Builder
+# Stage 1: Builder (do everything on Linux)
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-RUN apk add --no-cache openssl libc6-compat
+# Install dependencies needed for native modules
+RUN apk add --no-cache openssl libc6-compat python3 make g++
 
-COPY --from=deps /app/node_modules ./node_modules
+# Copy package files
+COPY package.json package-lock.json* ./
+COPY prisma ./prisma/
+
+# Fresh install on Linux - this gets the correct native bindings
+RUN npm ci
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Copy source code
 COPY . .
-
-# Now run nuxt prepare on the correct platform
-RUN npx nuxt prepare
 
 # Build Nuxt application
 ENV NITRO_PRESET=node-server
 RUN npm run build
 
-# Stage 3: Production
+# Stage 2: Production (minimal image)
 FROM node:20-alpine AS runner
 WORKDIR /app
 
