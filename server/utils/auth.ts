@@ -5,6 +5,7 @@ import { prisma } from './prisma'
 
 export interface TokenPayload {
   sub: string
+  azp?: string
   name?: string
   email?: string
   preferred_username?: string
@@ -59,10 +60,17 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
     const config = useRuntimeConfig()
     const jwksClient = await getJWKS()
     
+    // Don't check audience - Keycloak uses 'account' as aud by default
+    // Instead we verify the issuer and check azp (authorized party) matches our client
     const { payload } = await jose.jwtVerify(token, jwksClient, {
       issuer: config.keycloakIssuer,
-      audience: config.keycloakClientId,
     })
+    
+    // Verify the token was issued for our client (azp = authorized party)
+    if (payload.azp && payload.azp !== config.keycloakClientId) {
+      console.error('Token azp mismatch:', payload.azp, '!==', config.keycloakClientId)
+      return null
+    }
     
     return payload as TokenPayload
   } catch (error) {
