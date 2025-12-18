@@ -46,10 +46,22 @@ function extractRoleFromToken(payload: TokenPayload, clientId: string): Role {
   
   const allRoles = [...clientRoles, ...realmRoles]
   
-  if (allRoles.includes('owner')) {
+  // Debug: log roles found
+  console.log('Role extraction:', { 
+    clientId, 
+    clientRoles, 
+    realmRoles, 
+    allRoles,
+    resource_access: payload.resource_access
+  })
+  
+  // Check for owner/admin (case-insensitive)
+  const lowerRoles = allRoles.map(r => r.toLowerCase())
+  
+  if (lowerRoles.includes('owner')) {
     return Role.OWNER
   }
-  if (allRoles.includes('admin')) {
+  if (lowerRoles.includes('admin')) {
     return Role.ADMIN
   }
   return Role.USER
