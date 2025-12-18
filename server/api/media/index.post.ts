@@ -5,9 +5,9 @@ import { MediaType } from '@prisma/client'
 
 const createMediaSchema = z.object({
   s3Key: z.string().optional(), // Optional - can be message-only
-  type: z.enum(['IMAGE', 'VIDEO']).optional(),
+  type: z.enum(['IMAGE', 'VIDEO', 'TEXT']).optional(),
   mimeType: z.string().optional(),
-  sizeBytes: z.number().int().positive().optional(),
+  sizeBytes: z.number().int().nonnegative().optional(),
   message: z.string().min(1, 'Boodschap is verplicht').max(500),
   displayName: z.string().max(100).optional(),
   consent: z.boolean(),
@@ -45,11 +45,14 @@ export default defineEventHandler(async (event) => {
     })
   }
   
+  // Determine media type: TEXT if no file, otherwise use provided type
+  const mediaType = s3Key ? (type as MediaType) : MediaType.TEXT
+
   // Create media item (not approved yet for regular users)
   const mediaItem = await prisma.mediaItem.create({
     data: {
       userId: user.id,
-      type: s3Key ? (type as MediaType) : MediaType.IMAGE, // Default to IMAGE for text-only
+      type: mediaType,
       s3Key: s3Key || null,
       mimeType: mimeType || null,
       sizeBytes: sizeBytes || 0,

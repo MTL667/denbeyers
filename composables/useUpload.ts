@@ -73,9 +73,9 @@ export const useUpload = () => {
         method: 'POST',
         body: {
           s3Key: presignData?.s3Key,
-          type: presignData?.type,
+          type: presignData?.type || 'TEXT', // TEXT for message-only
           mimeType: file?.type,
-          sizeBytes: file?.size,
+          sizeBytes: file?.size || 0,
           message: options.message,
           displayName: options.displayName,
           consent: options.consent,

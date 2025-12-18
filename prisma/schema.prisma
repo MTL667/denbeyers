@@ -22,10 +22,10 @@ model MediaItem {
   id          String    @id @default(cuid())
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        MediaType
-  s3Key       String
-  mimeType    String
-  sizeBytes   Int
+  type        MediaType @default(TEXT)
+  s3Key       String?   // Optional for text-only messages
+  mimeType    String?   // Optional for text-only messages
+  sizeBytes   Int       @default(0)
   message     String?   @db.VarChar(500)
   displayName String?
   consent     Boolean   @default(false)
@@ -45,6 +45,7 @@ model MediaItem {
 enum MediaType {
   IMAGE
   VIDEO
+  TEXT
 }
 
 enum Role {
