@@ -7,25 +7,29 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install dependencies needed for Prisma
-RUN apk add --no-cache openssl
+# Install dependencies needed for Prisma and native modules
+RUN apk add --no-cache openssl libc6-compat
 
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
-RUN npm ci
+# Install dependencies without running postinstall (cross-platform issue)
+RUN npm ci --ignore-scripts
+
+# Generate Prisma client for Linux
+RUN npx prisma generate
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl libc6-compat
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
+# Now run nuxt prepare on the correct platform
+RUN npx nuxt prepare
 
 # Build Nuxt application
 ENV NITRO_PRESET=node-server
@@ -61,4 +65,3 @@ EXPOSE 3000
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["node", ".output/server/index.mjs"]
-
