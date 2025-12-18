@@ -1,0 +1,129 @@
+# ============================================
+# Den Beyers - Local Development Stack
+# ============================================
+# Usage: docker compose up -d
+# ============================================
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: denbeyers-postgres
+    environment:
+      POSTGRES_USER: denbeyers
+      POSTGRES_PASSWORD: denbeyers
+      POSTGRES_DB: denbeyers
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U denbeyers"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # MinIO (S3-compatible storage)
+  # ==========================================
+  minio:
+    image: minio/minio:latest
+    container_name: denbeyers-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ==========================================
+  # MinIO bucket creation
+  # ==========================================
+  minio-init:
+    image: minio/mc:latest
+    container_name: denbeyers-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb myminio/denbeyers --ignore-existing;
+      mc anonymous set download myminio/denbeyers;
+      echo 'Bucket denbeyers created successfully';
+      exit 0;
+      "
+
+  # ==========================================
+  # Keycloak (Identity Provider)
+  # ==========================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: denbeyers-keycloak
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/denbeyers
+      KC_DB_USERNAME: denbeyers
+      KC_DB_PASSWORD: denbeyers
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ==========================================
+  # Nuxt Application (Production Build)
+  # ==========================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: denbeyers-app
+    environment:
+      DATABASE_URL: postgresql://denbeyers:denbeyers@postgres:5432/denbeyers
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/denbeyers
+      KEYCLOAK_CLIENT_ID: denbeyers-app
+      KEYCLOAK_CLIENT_SECRET: your-secret-here
+      KEYCLOAK_REDIRECT_URL: http://localhost:3000/auth/callback
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: denbeyers
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      MAX_FILE_SIZE_MB: "200"
+      MAX_STICKY_ITEMS: "10"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+  minio_data:
+

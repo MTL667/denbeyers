@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String      @id @default(cuid())
+  keycloakSub String      @unique
+  name        String?
+  email       String?
+  role        Role        @default(USER)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  mediaItems  MediaItem[]
+}
+
+model MediaItem {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        MediaType
+  s3Key       String
+  mimeType    String
+  sizeBytes   Int
+  message     String?   @db.VarChar(500)
+  displayName String?
+  consent     Boolean   @default(false)
+  approved    Boolean   @default(false)
+  visible     Boolean   @default(true)
+  isOwnerPost Boolean   @default(false)
+  isSticky    Boolean   @default(false)
+  stickyOrder Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isSticky, stickyOrder, createdAt])
+  @@index([approved, visible, consent])
+  @@index([userId])
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum Role {
+  USER
+  ADMIN
+  OWNER
+}
+

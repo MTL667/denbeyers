@@ -1,0 +1,145 @@
+{
+  "realm": "denbeyers",
+  "enabled": true,
+  "displayName": "Den Beyers",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>Den Beyers 💛</span></div>",
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "rememberMe": true,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "owner",
+        "description": "Owner role - Nick (full access)"
+      },
+      {
+        "name": "admin",
+        "description": "Admin role - moderators"
+      },
+      {
+        "name": "user",
+        "description": "Default user role"
+      }
+    ],
+    "client": {
+      "denbeyers-app": [
+        {
+          "name": "owner",
+          "description": "Owner role for the app"
+        },
+        {
+          "name": "admin",
+          "description": "Admin role for the app"
+        }
+      ]
+    }
+  },
+  "defaultRoles": ["user"],
+  "clients": [
+    {
+      "clientId": "denbeyers-app",
+      "name": "Den Beyers App",
+      "description": "Den Beyers webapp for Nick",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "dev-secret-change-in-production",
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "https://denbeyers.be/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "https://denbeyers.be"
+      ],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:3000/*##https://denbeyers.be/*"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "protocolMappers": [
+        {
+          "name": "audience-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "denbeyers-app",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "client-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "config": {
+            "usermodel.clientRoleMapping.clientId": "denbeyers-app",
+            "claim.name": "resource_access.denbeyers-app.roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "nick@denbeyers.be",
+      "email": "nick@denbeyers.be",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Nick",
+      "lastName": "Den Beyer",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "changeme123",
+          "temporary": true
+        }
+      ],
+      "realmRoles": ["owner", "user"],
+      "clientRoles": {
+        "denbeyers-app": ["owner"]
+      }
+    },
+    {
+      "username": "admin@denbeyers.be",
+      "email": "admin@denbeyers.be",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Admin",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "changeme123",
+          "temporary": true
+        }
+      ],
+      "realmRoles": ["admin", "user"],
+      "clientRoles": {
+        "denbeyers-app": ["admin"]
+      }
+    }
+  ]
+}
+

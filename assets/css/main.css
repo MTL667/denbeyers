@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Warm, heartfelt color palette */
+  --color-warmth: #F59E0B;
+  --color-warmth-light: #FCD34D;
+  --color-warmth-dark: #D97706;
+  --color-heart: #DC2626;
+  --color-heart-light: #EF4444;
+  --color-hope: #10B981;
+  --color-calm: #3B82F6;
+  --color-soft-cream: #FEF3C7;
+  --color-soft-peach: #FECACA;
+  
+  /* Typography */
+  --font-display: 'Caveat', cursive;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: linear-gradient(135deg, #FEF3C7 0%, #FFF7ED 50%, #FECACA 100%);
+  min-height: 100vh;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Custom warm gradient backgrounds */
+.bg-warmth-gradient {
+  background: linear-gradient(135deg, #F59E0B 0%, #DC2626 100%);
+}
+
+.bg-soft-gradient {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FFF7ED 50%, #FECACA 100%);
+}
+
+/* Animated heart pulse */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.1); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.05); }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+/* Gentle floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Staggered fade-in for gallery items */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Sticky badge glow */
+.sticky-badge {
+  @apply bg-gradient-to-r from-amber-400 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+/* Card hover effects */
+.media-card {
+  @apply transition-all duration-300 ease-out;
+}
+
+.media-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Upload dropzone */
+.dropzone {
+  @apply border-2 border-dashed rounded-xl p-8 transition-all duration-300;
+}
+
+.dropzone.active {
+  @apply border-amber-500 bg-amber-50;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-amber-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-amber-400 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-amber-500;
+}
+
+/* Video player custom styling */
+video {
+  @apply rounded-lg;
+}
+
+/* Page transitions */
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.3s;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+  filter: blur(2px);
+}
+
