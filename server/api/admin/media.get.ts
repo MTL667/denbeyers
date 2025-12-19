@@ -3,6 +3,7 @@ import { prisma } from '~/server/utils/prisma'
 import { Role } from '@prisma/client'
 
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
   const user = await requireAuth(event)
   requireRole(user, [Role.OWNER, Role.ADMIN])
   
@@ -54,7 +55,13 @@ export default defineEventHandler(async (event) => {
   const hasMore = items.length > limit
   const mediaItems = hasMore ? items.slice(0, -1) : items
   
-  // Use customUrl if set, otherwise fall back to proxy URL
+  // Build direct MinIO URL from s3Key (bucket is public)
+  const buildDirectUrl = (s3Key: string | null) => {
+    if (!s3Key) return null
+    return `${config.s3Endpoint}/${config.s3Bucket}/${s3Key}`
+  }
+  
+  // Use customUrl if set, otherwise use direct MinIO URL
   const itemsWithUrls = mediaItems.map((item) => ({
     id: item.id,
     type: item.type,
@@ -63,6 +70,7 @@ export default defineEventHandler(async (event) => {
     message: item.message,
     displayName: item.displayName,
     customUrl: item.customUrl,
+    s3Key: item.s3Key,
     consent: item.consent,
     approved: item.approved,
     visible: item.visible,
@@ -72,7 +80,7 @@ export default defineEventHandler(async (event) => {
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     uploader: item.user,
-    mediaUrl: item.customUrl || (item.s3Key ? `/api/admin/media/${item.id}/file` : null),
+    mediaUrl: item.customUrl || buildDirectUrl(item.s3Key),
   }))
   
   // Get counts for dashboard

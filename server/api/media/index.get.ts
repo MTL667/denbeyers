@@ -1,6 +1,7 @@
 import { prisma } from '~/server/utils/prisma'
 
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
   const query = getQuery(event)
   
   const type = query.type as string | undefined
@@ -47,10 +48,17 @@ export default defineEventHandler(async (event) => {
   const hasMore = items.length > limit
   const mediaItems = hasMore ? items.slice(0, -1) : items
   
-  // Use customUrl if set, otherwise fall back to proxy URL
+  // Build direct MinIO URL from s3Key (bucket is public)
+  const buildDirectUrl = (s3Key: string | null) => {
+    if (!s3Key) return null
+    // Format: https://endpoint/bucket/key
+    return `${config.s3Endpoint}/${config.s3Bucket}/${s3Key}`
+  }
+  
+  // Use customUrl if set, otherwise use direct MinIO URL
   const itemsWithUrls = mediaItems.map((item) => ({
     ...item,
-    mediaUrl: item.customUrl || (item.s3Key ? `/api/media/${item.id}/file` : null),
+    mediaUrl: item.customUrl || buildDirectUrl(item.s3Key),
   }))
   
   return {
