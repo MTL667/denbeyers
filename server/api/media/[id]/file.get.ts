@@ -58,15 +58,18 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // Convert stream to buffer (AWS SDK v3 uses web streams)
+    const bytes = await response.Body.transformToByteArray()
+    
     // Set headers
     setHeaders(event, {
       'Content-Type': item.mimeType || 'application/octet-stream',
-      'Cache-Control': 'public, max-age=86400', // Cache for 1 day
-      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'public, max-age=86400',
+      'Content-Length': bytes.length.toString(),
     })
     
-    // Stream the file
-    return response.Body
+    // Return the buffer
+    return Buffer.from(bytes)
   } catch (error) {
     console.error('Error fetching from S3:', error)
     throw createError({
