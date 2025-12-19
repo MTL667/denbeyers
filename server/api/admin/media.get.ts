@@ -1,6 +1,5 @@
 import { requireAuth, requireRole } from '~/server/utils/auth'
 import { prisma } from '~/server/utils/prisma'
-import { generatePresignedDownloadUrl } from '~/server/utils/s3'
 import { Role } from '@prisma/client'
 
 export default defineEventHandler(async (event) => {
@@ -17,7 +16,7 @@ export default defineEventHandler(async (event) => {
   // Build filter conditions
   const where: any = {}
   
-  if (type === 'image' || type === 'video') {
+  if (type === 'image' || type === 'video' || type === 'text') {
     where.type = type.toUpperCase()
   }
   
@@ -55,27 +54,25 @@ export default defineEventHandler(async (event) => {
   const hasMore = items.length > limit
   const mediaItems = hasMore ? items.slice(0, -1) : items
   
-  // Generate signed URLs for each item
-  const itemsWithUrls = await Promise.all(
-    mediaItems.map(async (item) => ({
-      id: item.id,
-      type: item.type,
-      mimeType: item.mimeType,
-      sizeBytes: item.sizeBytes,
-      message: item.message,
-      displayName: item.displayName,
-      consent: item.consent,
-      approved: item.approved,
-      visible: item.visible,
-      isOwnerPost: item.isOwnerPost,
-      isSticky: item.isSticky,
-      stickyOrder: item.stickyOrder,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-      uploader: item.user,
-      mediaUrl: await generatePresignedDownloadUrl(item.s3Key, 3600),
-    }))
-  )
+  // Use proxy URLs for media (avoids CORS issues)
+  const itemsWithUrls = mediaItems.map((item) => ({
+    id: item.id,
+    type: item.type,
+    mimeType: item.mimeType,
+    sizeBytes: item.sizeBytes,
+    message: item.message,
+    displayName: item.displayName,
+    consent: item.consent,
+    approved: item.approved,
+    visible: item.visible,
+    isOwnerPost: item.isOwnerPost,
+    isSticky: item.isSticky,
+    stickyOrder: item.stickyOrder,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    uploader: item.user,
+    mediaUrl: item.s3Key ? `/api/admin/media/${item.id}/file` : null,
+  }))
   
   // Get counts for dashboard
   const counts = await prisma.mediaItem.groupBy({

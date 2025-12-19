@@ -1,14 +1,14 @@
 <script setup lang="ts">
 interface MediaItem {
   id: string
-  type: 'IMAGE' | 'VIDEO'
-  mimeType: string
+  type: 'IMAGE' | 'VIDEO' | 'TEXT'
+  mimeType: string | null
   message: string | null
   displayName: string | null
   isOwnerPost: boolean
   isSticky: boolean
   createdAt: string
-  mediaUrl: string
+  mediaUrl: string | null
 }
 
 const props = defineProps<{
@@ -16,6 +16,7 @@ const props = defineProps<{
 }>()
 
 const isExpanded = ref(false)
+const imageError = ref(false)
 
 const formattedDate = computed(() => {
   const date = new Date(props.item.createdAt)
@@ -27,6 +28,14 @@ const formattedDate = computed(() => {
 })
 
 const isVideo = computed(() => props.item.type === 'VIDEO')
+const isImage = computed(() => props.item.type === 'IMAGE')
+const isTextOnly = computed(() => props.item.type === 'TEXT' || !props.item.mediaUrl)
+const hasMedia = computed(() => !isTextOnly.value && props.item.mediaUrl && !imageError.value)
+
+const handleImageError = () => {
+  console.error('Image failed to load:', props.item.mediaUrl)
+  imageError.value = true
+}
 </script>
 
 <template>
@@ -53,26 +62,30 @@ const isVideo = computed(() => props.item.type === 'VIDEO')
       </span>
     </div>
 
-    <!-- Media -->
+    <!-- Media (only show if has media) -->
     <div 
+      v-if="hasMedia"
       class="relative aspect-square bg-warmth-50 cursor-pointer"
       @click="isExpanded = true"
     >
       <img 
-        v-if="!isVideo"
-        :src="item.mediaUrl"
+        v-if="isImage"
+        :src="item.mediaUrl!"
         :alt="item.displayName || 'Bericht'"
         class="w-full h-full object-cover"
         loading="lazy"
+        crossorigin="anonymous"
+        @error="handleImageError"
       />
       <div 
-        v-else
+        v-else-if="isVideo"
         class="w-full h-full flex items-center justify-center relative"
       >
         <video 
-          :src="item.mediaUrl"
+          :src="item.mediaUrl!"
           class="w-full h-full object-cover"
           preload="metadata"
+          crossorigin="anonymous"
         />
         <div class="absolute inset-0 flex items-center justify-center bg-black/20">
           <div class="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
@@ -80,6 +93,15 @@ const isVideo = computed(() => props.item.type === 'VIDEO')
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Text-only placeholder -->
+    <div 
+      v-else
+      class="relative aspect-video bg-gradient-to-br from-warmth-100 to-warmth-200 cursor-pointer flex items-center justify-center"
+      @click="isExpanded = true"
+    >
+      <span class="text-6xl">💬</span>
     </div>
 
     <!-- Content -->
@@ -120,19 +142,21 @@ const isVideo = computed(() => props.item.type === 'VIDEO')
           </button>
 
           <!-- Media -->
-          <div class="bg-black">
+          <div v-if="hasMedia" class="bg-black">
             <img 
-              v-if="!isVideo"
-              :src="item.mediaUrl"
+              v-if="isImage"
+              :src="item.mediaUrl!"
               :alt="item.displayName || 'Bericht'"
               class="w-full max-h-[70vh] object-contain"
+              crossorigin="anonymous"
             />
             <video 
-              v-else
-              :src="item.mediaUrl"
+              v-else-if="isVideo"
+              :src="item.mediaUrl!"
               class="w-full max-h-[70vh]"
               controls
               autoplay
+              crossorigin="anonymous"
             />
           </div>
 

@@ -1,5 +1,4 @@
 import { prisma } from '~/server/utils/prisma'
-import { generatePresignedDownloadUrl } from '~/server/utils/s3'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -47,13 +46,11 @@ export default defineEventHandler(async (event) => {
   const hasMore = items.length > limit
   const mediaItems = hasMore ? items.slice(0, -1) : items
   
-  // Generate signed URLs for each item
-  const itemsWithUrls = await Promise.all(
-    mediaItems.map(async (item) => ({
-      ...item,
-      mediaUrl: await generatePresignedDownloadUrl(item.s3Key, 3600),
-    }))
-  )
+  // Use proxy URLs instead of direct S3 presigned URLs (avoids CORS issues)
+  const itemsWithUrls = mediaItems.map((item) => ({
+    ...item,
+    mediaUrl: item.s3Key ? `/api/media/${item.id}/file` : null,
+  }))
   
   return {
     items: itemsWithUrls,
