@@ -6,6 +6,7 @@ import { Role } from '@prisma/client'
 const updateMediaSchema = z.object({
   message: z.string().max(500).optional(),
   displayName: z.string().max(100).optional(),
+  customUrl: z.string().url().optional().nullable(), // Direct URL for media
   approved: z.boolean().optional(),
   visible: z.boolean().optional(),
   isSticky: z.boolean().optional(),

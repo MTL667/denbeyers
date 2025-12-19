@@ -7,11 +7,12 @@ const { isOwner } = useAuth()
 
 interface AdminMediaItem {
   id: string
-  type: 'IMAGE' | 'VIDEO'
-  mimeType: string
+  type: 'IMAGE' | 'VIDEO' | 'TEXT'
+  mimeType: string | null
   sizeBytes: number
   message: string | null
   displayName: string | null
+  customUrl: string | null
   consent: boolean
   approved: boolean
   visible: boolean
@@ -25,7 +26,7 @@ interface AdminMediaItem {
     name: string | null
     email: string | null
   }
-  mediaUrl: string
+  mediaUrl: string | null
 }
 
 interface Stats {
@@ -41,6 +42,8 @@ const stats = ref<Stats>({ total: 0, pending: 0, approved: 0, hidden: 0, sticky:
 const loading = ref(true)
 const statusFilter = ref<string>('pending')
 const selectedItem = ref<AdminMediaItem | null>(null)
+const editCustomUrl = ref('')
+const savingUrl = ref(false)
 
 const fetchAdminMedia = async () => {
   try {
@@ -63,6 +66,28 @@ const fetchAdminMedia = async () => {
 onMounted(fetchAdminMedia)
 
 watch(statusFilter, () => fetchAdminMedia())
+
+watch(selectedItem, (item) => {
+  editCustomUrl.value = item?.customUrl || ''
+})
+
+const saveCustomUrl = async () => {
+  if (!selectedItem.value) return
+  
+  savingUrl.value = true
+  try {
+    await updateItem(selectedItem.value.id, { 
+      customUrl: editCustomUrl.value || null 
+    })
+    // Update local selected item
+    if (selectedItem.value) {
+      selectedItem.value.customUrl = editCustomUrl.value || null
+      selectedItem.value.mediaUrl = editCustomUrl.value || selectedItem.value.mediaUrl
+    }
+  } finally {
+    savingUrl.value = false
+  }
+}
 
 const updateItem = async (id: string, updates: Record<string, any>) => {
   try {
@@ -348,6 +373,29 @@ const formatDate = (dateString: string) => {
               <div v-if="selectedItem.message" class="mb-4">
                 <div class="text-sm text-gray-500 mb-1">Boodschap</div>
                 <p class="text-gray-700 whitespace-pre-wrap">{{ selectedItem.message }}</p>
+              </div>
+
+              <!-- Custom URL Editor -->
+              <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                <div class="text-sm text-gray-500 mb-2">📷 Media URL (optioneel - directe link)</div>
+                <div class="flex gap-2">
+                  <input 
+                    v-model="editCustomUrl"
+                    type="url"
+                    placeholder="https://minio.example.com/bucket/image.jpg"
+                    class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-warmth-500 focus:ring-1 focus:ring-warmth-500 outline-none"
+                  />
+                  <button
+                    @click="saveCustomUrl"
+                    :disabled="savingUrl"
+                    class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50"
+                  >
+                    {{ savingUrl ? '...' : 'Opslaan' }}
+                  </button>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">
+                  Vul hier een directe MinIO URL in als de standaard proxy niet werkt
+                </p>
               </div>
 
               <div class="flex flex-wrap gap-2">

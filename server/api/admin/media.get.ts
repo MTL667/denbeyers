@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
   const hasMore = items.length > limit
   const mediaItems = hasMore ? items.slice(0, -1) : items
   
-  // Use proxy URLs for media (avoids CORS issues)
+  // Use customUrl if set, otherwise fall back to proxy URL
   const itemsWithUrls = mediaItems.map((item) => ({
     id: item.id,
     type: item.type,
@@ -62,6 +62,7 @@ export default defineEventHandler(async (event) => {
     sizeBytes: item.sizeBytes,
     message: item.message,
     displayName: item.displayName,
+    customUrl: item.customUrl,
     consent: item.consent,
     approved: item.approved,
     visible: item.visible,
@@ -71,7 +72,7 @@ export default defineEventHandler(async (event) => {
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     uploader: item.user,
-    mediaUrl: item.s3Key ? `/api/admin/media/${item.id}/file` : null,
+    mediaUrl: item.customUrl || (item.s3Key ? `/api/admin/media/${item.id}/file` : null),
   }))
   
   // Get counts for dashboard

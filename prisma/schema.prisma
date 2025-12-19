@@ -24,6 +24,7 @@ model MediaItem {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   type        MediaType @default(TEXT)
   s3Key       String?   // Optional for text-only messages
+  customUrl   String?   // Optional direct URL (bypasses S3 presigning)
   mimeType    String?   // Optional for text-only messages
   sizeBytes   Int       @default(0)
   message     String?   @db.VarChar(500)

@@ -33,6 +33,7 @@ export default defineEventHandler(async (event) => {
       id: true,
       type: true,
       s3Key: true,
+      customUrl: true,
       mimeType: true,
       message: true,
       displayName: true,
@@ -46,10 +47,10 @@ export default defineEventHandler(async (event) => {
   const hasMore = items.length > limit
   const mediaItems = hasMore ? items.slice(0, -1) : items
   
-  // Use proxy URLs instead of direct S3 presigned URLs (avoids CORS issues)
+  // Use customUrl if set, otherwise fall back to proxy URL
   const itemsWithUrls = mediaItems.map((item) => ({
     ...item,
-    mediaUrl: item.s3Key ? `/api/media/${item.id}/file` : null,
+    mediaUrl: item.customUrl || (item.s3Key ? `/api/media/${item.id}/file` : null),
   }))
   
   return {
