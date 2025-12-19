@@ -74,7 +74,6 @@ const handleImageError = () => {
         :alt="item.displayName || 'Bericht'"
         class="w-full h-full object-cover"
         loading="lazy"
-        crossorigin="anonymous"
         @error="handleImageError"
       />
       <div 
@@ -85,7 +84,6 @@ const handleImageError = () => {
           :src="item.mediaUrl!"
           class="w-full h-full object-cover"
           preload="metadata"
-          crossorigin="anonymous"
         />
         <div class="absolute inset-0 flex items-center justify-center bg-black/20">
           <div class="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
@@ -148,7 +146,6 @@ const handleImageError = () => {
               :src="item.mediaUrl!"
               :alt="item.displayName || 'Bericht'"
               class="w-full max-h-[70vh] object-contain"
-              crossorigin="anonymous"
             />
             <video 
               v-else-if="isVideo"
@@ -156,7 +153,6 @@ const handleImageError = () => {
               class="w-full max-h-[70vh]"
               controls
               autoplay
-              crossorigin="anonymous"
             />
           </div>
 

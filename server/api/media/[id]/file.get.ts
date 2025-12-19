@@ -1,6 +1,5 @@
 import { prisma } from '~/server/utils/prisma'
-import { getS3Client } from '~/server/utils/s3'
-import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { generatePresignedDownloadUrl } from '~/server/utils/s3'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -17,7 +16,6 @@ export default defineEventHandler(async (event) => {
     where: { id },
     select: {
       s3Key: true,
-      mimeType: true,
       approved: true,
       visible: true,
       consent: true,
@@ -39,43 +37,10 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  // Fetch from S3
-  const config = useRuntimeConfig()
-  const client = getS3Client()
+  // Generate presigned URL and redirect
+  const presignedUrl = await generatePresignedDownloadUrl(item.s3Key, 3600)
   
-  try {
-    const command = new GetObjectCommand({
-      Bucket: config.s3Bucket,
-      Key: item.s3Key,
-    })
-    
-    const response = await client.send(command)
-    
-    if (!response.Body) {
-      throw createError({
-        statusCode: 404,
-        message: 'File not found in storage',
-      })
-    }
-    
-    // Convert stream to buffer (AWS SDK v3 uses web streams)
-    const bytes = await response.Body.transformToByteArray()
-    
-    // Set headers
-    setHeaders(event, {
-      'Content-Type': item.mimeType || 'application/octet-stream',
-      'Cache-Control': 'public, max-age=86400',
-      'Content-Length': bytes.length.toString(),
-    })
-    
-    // Return the buffer
-    return Buffer.from(bytes)
-  } catch (error) {
-    console.error('Error fetching from S3:', error)
-    throw createError({
-      statusCode: 500,
-      message: 'Failed to fetch media',
-    })
-  }
+  // Redirect to the presigned URL
+  return sendRedirect(event, presignedUrl, 302)
 })
 
