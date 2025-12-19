@@ -3,7 +3,7 @@ definePageMeta({
   middleware: ['admin'],
 })
 
-const { isOwner } = useAuth()
+const { isOwner, authenticatedFetch } = useAuth()
 
 interface AdminMediaItem {
   id: string
@@ -53,7 +53,7 @@ const fetchAdminMedia = async () => {
       params.set('status', statusFilter.value)
     }
     
-    const data = await $fetch<{ items: AdminMediaItem[]; stats: Stats }>(`/api/admin/media?${params.toString()}`)
+    const data = await authenticatedFetch<{ items: AdminMediaItem[]; stats: Stats }>(`/api/admin/media?${params.toString()}`)
     items.value = data.items
     stats.value = data.stats
   } catch (error) {
@@ -91,7 +91,7 @@ const saveCustomUrl = async () => {
 
 const updateItem = async (id: string, updates: Record<string, any>) => {
   try {
-    await $fetch(`/api/owner/media/${id}`, {
+    await authenticatedFetch(`/api/owner/media/${id}`, {
       method: 'PATCH',
       body: updates,
     })
@@ -105,7 +105,7 @@ const deleteItem = async (id: string) => {
   if (!confirm('Weet je zeker dat je dit item wilt verwijderen?')) return
   
   try {
-    await $fetch(`/api/owner/media/${id}`, {
+    await authenticatedFetch(`/api/owner/media/${id}`, {
       method: 'DELETE',
     })
     await fetchAdminMedia()
