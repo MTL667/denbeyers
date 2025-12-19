@@ -16,6 +16,17 @@ export const useAuth = () => {
   const session = useState<AuthSession | null>('auth-session', () => null)
   const loading = useState('auth-loading', () => true)
 
+  const refreshToken = async (): Promise<boolean> => {
+    try {
+      await $fetch('/api/auth/refresh', { method: 'POST' })
+      return true
+    } catch (error) {
+      console.error('Token refresh failed:', error)
+      session.value = { authenticated: false, user: null }
+      return false
+    }
+  }
+
   const fetchSession = async () => {
     try {
       loading.value = true
@@ -50,6 +61,28 @@ export const useAuth = () => {
     }
   }
 
+  // Wrapper for API calls that automatically refreshes token on 401
+  const authenticatedFetch = async <T>(
+    url: string,
+    options: Parameters<typeof $fetch>[1] = {}
+  ): Promise<T> => {
+    try {
+      return await $fetch<T>(url, options)
+    } catch (error: any) {
+      // If 401, try to refresh token and retry
+      if (error?.response?.status === 401 || error?.statusCode === 401) {
+        const refreshed = await refreshToken()
+        if (refreshed) {
+          return await $fetch<T>(url, options)
+        }
+        // Refresh failed, redirect to login
+        login()
+        throw error
+      }
+      throw error
+    }
+  }
+
   const isAuthenticated = computed(() => session.value?.authenticated ?? false)
   const user = computed(() => session.value?.user ?? null)
   const isOwner = computed(() => user.value?.role === 'OWNER')
@@ -62,6 +95,8 @@ export const useAuth = () => {
     fetchSession,
     login,
     logout,
+    refreshToken,
+    authenticatedFetch,
     isAuthenticated,
     user,
     isOwner,

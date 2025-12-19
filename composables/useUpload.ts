@@ -12,6 +12,8 @@ interface UploadResult {
 }
 
 export const useUpload = () => {
+  const { authenticatedFetch } = useAuth()
+  
   const uploading = useState('upload-uploading', () => false)
   const progress = useState('upload-progress', () => 0)
   const error = useState<string | null>('upload-error', () => null)
@@ -38,7 +40,7 @@ export const useUpload = () => {
       // Step 1: Get presigned URL (only if file is provided)
       if (file) {
         const presignEndpoint = isOwnerUpload ? '/api/owner/media/presign' : '/api/media/presign'
-        presignData = await $fetch<PresignResponse>(presignEndpoint, {
+        presignData = await authenticatedFetch<PresignResponse>(presignEndpoint, {
           method: 'POST',
           body: {
             filename: file.name,
@@ -69,7 +71,7 @@ export const useUpload = () => {
 
       // Step 3: Create media record
       const createEndpoint = isOwnerUpload ? '/api/owner/media' : '/api/media'
-      const result = await $fetch<UploadResult>(createEndpoint, {
+      const result = await authenticatedFetch<UploadResult>(createEndpoint, {
         method: 'POST',
         body: {
           s3Key: presignData?.s3Key,
